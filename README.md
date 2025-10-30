@@ -70,3 +70,23 @@ O controle de movimento **não utiliza encoders** e é baseado em duas técnicas
 * **Controle de Alinhamento (Controlador P):** Durante o movimento para frente (função `alinharRobo()`), um **controlador Proporcional (P)** simples é usado. Ele lê os sensores laterais, calcula o erro (`distLatDir - distLatEsq`) em relação ao centro do corredor e ajusta a velocidade de cada motor (aumentando uma e diminuindo a outra) para manter o robô sempre centralizado.
 
 * **Controle de Curvas (Temporizado):** As curvas de 90° e 180° (função `girar90()`) são executadas com base em **temporização (delays)**. O valor `const int TEMPO_GIRO` foi calibrado manualmente para que a rotação seja a mais precisa possível.
+
+---
+
+## Processo de Montagem e Construção
+
+A montagem do Pathfinder foi um processo de prototipagem rápida, focada em integrar os componentes eletrônicos a um chassi personalizado.
+
+### 1. Estrutura e Chassi
+* O chassi foi modelado no software **Blender** e **impresso em 3D** com filamento **PLA**, garantindo uma base leve e sob medida.
+* Os motores N20 e a roda boba de esfera foram fixados mecanicamente na base.
+
+### 2. Montagem Eletrônica
+* **Conexões Principais:** Utilizamos uma **protoboard** (breadboard) como ponto central para conectar o ESP32, os sensores e os módulos.
+* **Soldagem:** Para garantir conexões elétricas robustas e que resistissem ao movimento, **utilizamos ferro de solda** para fixar os fios diretamente nos terminais dos **motores N20** e nos pinos da **Ponte H (L298N)**.
+* **Fiação:** Jumpers de diversos tipos (macho-macho, macho-fêmea) foram usados para fazer as conexões entre os sensores, a protoboard e o ESP32.
+* **Fixação:** **Fita dupla-face** e **cola quente** foram usadas estrategicamente para fixar componentes mais leves (como a própria protoboard e os sensores) no chassi, amortecendo vibrações e mantendo tudo no lugar.
+
+### 3. Calibração Inicial (Hardware)
+* Um passo crucial foi a **calibração do regulador de tensão** (Step-Down LM2596). Usando um multímetro, ajustamos o trimpot do módulo para garantir uma saída estável de **5V** para alimentar o ESP32 e os sensores a partir da bateria de 7.4V.
+* O restante da calibração (sensores e movimento) foi feito via software.
