@@ -6,7 +6,7 @@ O "Pathfinder" é um robô compacto projetado para navegar, mapear e resolver um
 
 ## Contexto do Projeto
 
-Este projeto foi desenvolvido como requisito para [Nome da Disciplina ou Matéria] da **PUC Minas**, com o objetivo de competir na categoria Micromouse do evento **Robô Challenge 2025**.
+Este projeto foi desenvolvido por alunos da **PUC Minas**, com o objetivo de competir na categoria Micromouse do evento **Robô Challenge 2025**.
 
 O desafio consiste em duas fases (embora este código inicial foque na exploração):
 1.  **Fase de Exploração:** O robô entra no labirinto sem conhecimento prévio e deve mapear as paredes usando seus sensores.
@@ -38,7 +38,7 @@ O design do hardware foi focado em baixo custo, agilidade e processamento eficie
 | **Apoio (Roda Boba)** | 1x Roda de Esfera Transferidora | Terceiro ponto de apoio para permitir curvas fáceis (caster). |
 | **Chassi** | Design próprio (Impresso em 3D) | Estrutura principal que une todos os componentes. |
 
-##Software, Firmware e Algoritmos
+## Software, Firmware e Algoritmos
 
 * **Linguagem:** C++
 * **Ambiente/IDE:** [Arduino IDE / PlatformIO com VS Code]
