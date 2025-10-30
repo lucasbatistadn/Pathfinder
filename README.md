@@ -50,7 +50,7 @@ O design do hardware foi focado em baixo custo, agilidade e processamento eficie
 
 * **Linguagem:** C++
 * **Ambiente/IDE:** [Arduino IDE / PlatformIO com VS Code]
-* **Firmware:** O código-fonte principal está localizado em [`src/main.cpp`](src/main.cpp).
+* **Firmware:** O código-fonte principal está localizado em abaixo do arquivo README.md como codigofonte.
 
 ### Algoritmo de Navegação
 
