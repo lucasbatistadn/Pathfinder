@@ -1,0 +1,249 @@
+// ====================================================================
+// I. DEFINIÇÕES GLOBAIS E PINAGEM (L298N)
+// ====================================================================
+
+// Motor Esquerdo (Motor A)
+const int DIR1_ESQ = 16; // IN1 - Direcao (HIGH/LOW)
+const int DIR2_ESQ = 17; // IN2 - Direcao (HIGH/LOW)
+const int PWM_ESQ  = 18; // ENA - Velocidade (PWM)
+
+// Motor Direito (Motor B)
+const int DIR1_DIR = 19; // IN3 - Direcao (HIGH/LOW)
+const int DIR2_DIR = 21; // IN4 - Direcao (HIGH/LOW)
+const int PWM_DIR  = 22; // ENB - Velocidade (PWM) -- NOVO PINO 22
+
+// PINAGEM DOS SENSORES SHARP (ADC)
+const int SHARP_FRENTE_LONGO_PIN = 32; // GP2Y0A21 (10-80cm)
+const int SHARP_LAT_DIR_PIN      = 33; // GP2Y0A51 (2-15cm)
+const int SHARP_LAT_ESQ_PIN      = 34; // GP2Y0A51 (2-15cm)
+
+const int NUM_LEITURAS = 10; // Média para estabilizar a leitura do Sharp
+
+//----------------------------------------------------------------
+// II. FUNÇÕES DE SENSOR E CALIBRAÇÃO 
+//----------------------------------------------------------------
+
+float lerDistanciaCm(int valorADC, bool isLongRange) {
+    if (valorADC < 50) return isLongRange ? 80.0 : 15.0; 
+    
+    float volts = (float)valorADC * (3.3 / 4095.0);
+    
+    if (isLongRange) { // GP2Y0A21 (10-80cm)
+        return (29.14 / volts) - 1.2; 
+    } else { // GP2Y0A51 (2-15cm)
+        return (7.325 / volts) - 2.5; 
+    }
+}
+
+float getDistancia(int pin, bool isLongRange) {
+    long soma = 0;
+    for (int i = 0; i < NUM_LEITURAS; i++) {
+        soma += analogRead(pin);
+        delay(1); 
+    }
+    int mediaADC = soma / NUM_LEITURAS;
+    
+    return lerDistanciaCm(mediaADC, isLongRange);
+}
+
+//----------------------------------------------------------------
+// III. FUNÇÕES DE CONTROLE DE MOTOR (L298N)
+//----------------------------------------------------------------
+
+/**
+ * Funcao para controlar a velocidade de cada motor individualmente (PWM)
+ */
+void setVelocidades(int velocidadeEsq, int velocidadeDir) {
+    analogWrite(PWM_ESQ, velocidadeEsq);
+    analogWrite(PWM_DIR, velocidadeDir);
+}
+
+/**
+ * Define a direcao para o Motor Esquerdo (Motor A)
+ */
+void setMotorADirecao(bool frente) {
+    if (frente) {
+        digitalWrite(DIR1_ESQ, HIGH);
+        digitalWrite(DIR2_ESQ, LOW);
+    } else {
+        digitalWrite(DIR1_ESQ, LOW);
+        digitalWrite(DIR2_ESQ, HIGH);
+    }
+}
+
+/**
+ * Define a direcao para o Motor Direito (Motor B)
+ */
+void setMotorBDirecao(bool frente) {
+    if (frente) {
+        digitalWrite(DIR1_DIR, HIGH);
+        digitalWrite(DIR2_DIR, LOW);
+    } else {
+        digitalWrite(DIR1_DIR, LOW);
+        digitalWrite(DIR2_DIR, HIGH);
+    }
+}
+
+void parar(bool freioRapido = true) {
+    setVelocidades(0, 0); 
+    
+    if (freioRapido) {
+        // Freio por curto nos pinos de direcao (LOW/LOW)
+        digitalWrite(DIR1_ESQ, LOW); 
+        digitalWrite(DIR2_ESQ, LOW);
+        digitalWrite(DIR1_DIR, LOW); 
+        digitalWrite(DIR2_DIR, LOW);
+    }
+}
+
+void frente(int velocidade) {
+    setMotorADirecao(true); 
+    setMotorBDirecao(true); 
+    setVelocidades(velocidade, velocidade);
+}
+
+void tras(int velocidade) {
+    setMotorADirecao(false); 
+    setMotorBDirecao(false); 
+    setVelocidades(velocidade, velocidade);
+}
+
+void girarDireita(int velocidade) {
+    // Motor Esquerdo FRENTE, Motor Direito TRAS
+    setMotorADirecao(true); 
+    setMotorBDirecao(false); 
+    setVelocidades(velocidade, velocidade);
+}
+
+void girarEsquerda(int velocidade) {
+    // Motor Esquerdo TRAS, Motor Direito FRENTE
+    setMotorADirecao(false); 
+    setMotorBDirecao(true); 
+    setVelocidades(velocidade, velocidade);
+}
+
+//----------------------------------------------------------------
+// IV. FUNÇÕES DE NAVEGAÇÃO BÁSICA (A base do Algoritmo)
+//----------------------------------------------------------------
+
+// *** VARIÁVEIS DE CALIBRAÇÃO ***
+const float DIST_PAREDE = 9.0;    // Distância ideal para o centro do robô (cm)
+const float TOLERANCIA = 1.0;     // Tolerância em cm (ex: entre 8.0 e 10.0cm)
+const int VELOCIDADE_BASE = 100;  // Velocidade padrao de cruzeiro (max 255)
+const int AJUSTE_LATERAL = 20;    // Quantidade de velocidade para correcao (max 255)
+
+/**
+ * Funcao para manter o robo centralizado no corredor usando os sensores laterais (A51).
+ */
+void alinharRobo() {
+    float distLatDir = getDistancia(SHARP_LAT_DIR_PIN, false);
+    float distLatEsq = getDistancia(SHARP_LAT_ESQ_PIN, false);
+    
+    float erro = distLatDir - distLatEsq;
+    
+    setMotorADirecao(true); 
+    setMotorBDirecao(true);
+
+    // Se o robô está muito perto da parede DIREITA
+    if (erro > TOLERANCIA) {
+        // Gira suavemente para a ESQUERDA (Motor Esquerdo Lento, Motor Direito Rápido)
+        setVelocidades(VELOCIDADE_BASE - AJUSTE_LATERAL, VELOCIDADE_BASE + AJUSTE_LATERAL);
+    } 
+    // Se o robô está muito perto da parede ESQUERDA
+    else if (erro < -TOLERANCIA) {
+        // Gira suavemente para a DIREITA (Motor Esquerdo Rápido, Motor Direito Lento)
+        setVelocidades(VELOCIDADE_BASE + AJUSTE_LATERAL, VELOCIDADE_BASE - AJUSTE_LATERAL);
+    } 
+    // Centralizado
+    else {
+        frente(VELOCIDADE_BASE);
+    }
+}
+
+/**
+ * Funcao para girar o robo em 90 graus (requer teste pratico para TEMPO_GIRO).
+ */
+void girar90(bool direita) {
+    parar();
+    delay(200);
+
+    // *** CALIBRE ESTA VARIAVEL ***
+    // Use seus testes praticos para encontrar o valor em ms que resulta em 90 graus exatos.
+    const int TEMPO_GIRO = 350; 
+    
+    if (direita) {
+        girarDireita(VELOCIDADE_BASE);
+    } else {
+        girarEsquerda(VELOCIDADE_BASE);
+    }
+    
+    delay(TEMPO_GIRO);
+    parar();
+    delay(200);
+}
+
+
+//----------------------------------------------------------------
+// V. SETUP e LOOP (Lógica Principal de Teste)
+//----------------------------------------------------------------
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("Micromouse Inicializado. L298N em uso.");
+
+    // Configuração dos pinos do Motor (Saídas)
+    pinMode(PWM_ESQ, OUTPUT);
+    pinMode(DIR1_ESQ, OUTPUT);
+    pinMode(DIR2_ESQ, OUTPUT);
+    pinMode(PWM_DIR, OUTPUT);
+    pinMode(DIR1_DIR, OUTPUT);
+    pinMode(DIR2_DIR, OUTPUT);
+    
+    Serial.println("Pinos de motor configurados para L298N. Sensores prontos.");
+    delay(3000);
+}
+
+void loop() {
+
+    // 1. LEITURA DE TODOS OS SENSORES
+    float distFrente = getDistancia(SHARP_FRENTE_LONGO_PIN, true);
+    float distLatDir = getDistancia(SHARP_LAT_DIR_PIN, false);
+    float distLatEsq = getDistancia(SHARP_LAT_ESQ_PIN, false);
+
+    // Envia dados para o monitor Serial (Para calibração/debug)
+    Serial.printf("F.Longo: %.1fcm | L.Dir: %.1fcm | L.Esq: %.1fcm \n",
+              distFrente, distLatDir, distLatEsq);
+
+    // 2. LÓGICA DE NAVEGAÇÃO SIMPLES (Regra da Mão Direita Adaptada)
+    
+    // Se a parede frontal está MUITO perto
+    if (distFrente < 10.0) { 
+        parar();
+        Serial.println("PAREDE NA FRENTE. DECIDINDO...");
+        delay(500);
+        
+        // Prioridade: Direita
+        if (distLatDir > DIST_PAREDE + 5.0) { 
+            girar90(true); 
+            Serial.println("Virando Direita.");
+        } 
+        // Segunda prioridade: Esquerda
+        else if (distLatEsq > DIST_PAREDE + 5.0) { 
+            girar90(false); 
+            Serial.println("Virando Esquerda.");
+        }
+        // Terceira prioridade: 180 graus 
+        else {
+            girar90(true); 
+            girar90(true); 
+            Serial.println("Beco sem saida. Girando 180.");
+        }
+    } 
+    // 3. MOVIMENTO E ALINHAMENTO
+    else {
+        // Alinha o robô com base nas paredes laterais enquanto avança
+        alinharRobo();
+    }
+    
+    delay(100); 
+}
