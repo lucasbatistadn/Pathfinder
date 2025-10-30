@@ -1,5 +1,13 @@
 # Projeto Micromouse "Pathfinder"
 
+Projeto desenvolvido na **PUC Minas - Coração Eucarístico**.
+
+**Integrantes:**
+* Arthur Victor Lopes de Melo Alves
+* Leonardo de Souza Fernandes
+* Lucas Batista Domingues Nogueira
+* Sophia da Costa Fernandes
+
 **Um robô autônomo (Micromouse) desenvolvido para o desafio Robô Challenge 2025 da PUC Minas.**
 
 O "Pathfinder" é um robô compacto projetado para navegar, mapear e resolver um labirinto de forma 100% autônoma. Este repositório contém o firmware (código-fonte), os arquivos de design do chassi (STL) e a documentação do projeto.
@@ -42,7 +50,7 @@ O design do hardware foi focado em baixo custo, agilidade e processamento eficie
 
 * **Linguagem:** C++
 * **Ambiente/IDE:** [Arduino IDE / PlatformIO com VS Code]
-* **Firmware:** O código-fonte principal está localizado em `src/main.cpp`.
+* **Firmware:** O código-fonte principal está localizado em [`src/main.cpp`](src/main.cpp).
 
 ### Algoritmo de Navegação
 
